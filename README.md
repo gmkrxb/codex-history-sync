@@ -9,6 +9,26 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/gmkrxb/codex-history-sync/actions/workflows/release.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/gmkrxb/codex-history-sync/release.yml?branch=main&label=build&logo=github" alt="Build status" />
+  </a>
+  <a href="https://github.com/gmkrxb/codex-history-sync/releases/latest">
+    <img src="https://img.shields.io/github/v/release/gmkrxb/codex-history-sync?label=release" alt="Latest release" />
+  </a>
+  <img src="https://img.shields.io/github/package-json/v/gmkrxb/codex-history-sync?label=version" alt="Version" />
+  <a href="https://github.com/gmkrxb/codex-history-sync/releases">
+    <img src="https://img.shields.io/github/downloads/gmkrxb/codex-history-sync/total?label=downloads" alt="Downloads" />
+  </a>
+  <a href="https://github.com/gmkrxb/codex-history-sync/stargazers">
+    <img src="https://img.shields.io/github/stars/gmkrxb/codex-history-sync?style=flat&label=stars" alt="Stars" />
+  </a>
+  <img src="https://img.shields.io/github/commit-activity/m/gmkrxb/codex-history-sync?label=commit%20activity" alt="Commit activity" />
+  <a href="LICENSE">
+    <img src="https://img.shields.io/github/license/gmkrxb/codex-history-sync?label=license" alt="License" />
+  </a>
+</p>
+
+<p align="center">
   <a href="README_EN.md">English</a> ·
   <a href="#下载">下载</a> ·
   <a href="#截图">截图</a> ·
