@@ -61,8 +61,8 @@ Codex History Sync 是一个用于修复 Codex Desktop 本地历史显示问题�
 | Windows | arm64 | 便携版 EXE | [下载](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-Portable-2.0.0-win-arm64.exe) |
 | macOS | Intel x64 | DMG | [下载](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-mac-x64.dmg) |
 | macOS | Apple Silicon arm64 | DMG | [下载](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-mac-arm64.dmg) |
-| Linux | x64 | AppImage | [下载](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-x64.AppImage) |
-| Linux | x64 | deb | [下载](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-x64.deb) |
+| Linux | x64 | AppImage | [下载](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-x86_64.AppImage) |
+| Linux | x64 | deb | [下载](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-amd64.deb) |
 | Linux | arm64 | AppImage | [下载](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-arm64.AppImage) |
 | Linux | arm64 | deb | [下载](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-arm64.deb) |
 

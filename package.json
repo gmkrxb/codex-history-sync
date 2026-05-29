@@ -2,7 +2,10 @@
   "name": "codex-history-sync-tool",
   "version": "2.0.0",
   "description": "Codex Desktop 本地历史同步工具 - Vue 3 + Electron",
-  "author": "gmkrxb",
+  "author": {
+    "name": "gmkrxb",
+    "email": "gmkrxb@users.noreply.github.com"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/gmkrxb/codex-history-sync.git"
@@ -81,7 +84,8 @@
       ],
       "icon": "assets/codex-sync-modern.png",
       "artifactName": "Codex-History-Sync-${version}-linux-${arch}.${ext}",
-      "category": "Utility"
+      "category": "Utility",
+      "maintainer": "gmkrxb <gmkrxb@users.noreply.github.com>"
     },
     "nsis": {
       "oneClick": false,

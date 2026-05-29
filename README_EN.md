@@ -61,8 +61,8 @@ Do not use it for:
 | Windows | arm64 | Portable EXE | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-Portable-2.0.0-win-arm64.exe) |
 | macOS | Intel x64 | DMG | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-mac-x64.dmg) |
 | macOS | Apple Silicon arm64 | DMG | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-mac-arm64.dmg) |
-| Linux | x64 | AppImage | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-x64.AppImage) |
-| Linux | x64 | deb | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-x64.deb) |
+| Linux | x64 | AppImage | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-x86_64.AppImage) |
+| Linux | x64 | deb | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-amd64.deb) |
 | Linux | arm64 | AppImage | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-arm64.AppImage) |
 | Linux | arm64 | deb | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-arm64.deb) |
 
