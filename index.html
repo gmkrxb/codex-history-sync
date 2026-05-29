@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Codex History Sync</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      /* === Pre-Vue Splash Screen === */
+      html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; }
+      body { background:#0f1923; }
+      #pre-splash {
+        position:fixed; inset:0; z-index:99999;
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        background:#0f1923;
+        font-family:'Inter','Segoe UI Variable Text','Segoe UI','Microsoft YaHei UI',system-ui,sans-serif;
+        transition: opacity 0.5s ease-out;
+      }
+      #pre-splash.fade-out { opacity:0; pointer-events:none; }
+      .splash-logo {
+        width:64px; height:64px; border-radius:18px;
+        background: linear-gradient(135deg, #63b3ed 0%, #4299e1 50%, #3182ce 100%);
+        display:flex; align-items:center; justify-content:center;
+        box-shadow: 0 0 40px rgba(99,179,237,0.35);
+        margin-bottom:24px;
+        animation: splash-pulse 2s ease-in-out infinite;
+      }
+      .splash-logo svg { width:32px; height:32px; color:#fff; }
+      .splash-title { font-size:20px; font-weight:700; color:#e8edf4; letter-spacing:-0.3px; margin-bottom:8px; }
+      .splash-subtitle { font-size:13px; color:#5a6a7a; margin-bottom:32px; }
+      .splash-dots { display:flex; gap:6px; }
+      .splash-dots span {
+        width:8px; height:8px; border-radius:50%;
+        background:rgba(99,179,237,0.5);
+        animation: dot-bounce 1.4s ease-in-out infinite;
+      }
+      .splash-dots span:nth-child(2) { animation-delay:0.16s; }
+      .splash-dots span:nth-child(3) { animation-delay:0.32s; }
+      @keyframes splash-pulse {
+        0%,100% { transform:scale(1); }
+        50% { transform:scale(1.05); }
+      }
+      @keyframes dot-bounce {
+        0%,80%,100% { transform:scale(0.6); opacity:0.4; }
+        40% { transform:scale(1); opacity:1; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Pre-Vue splash (vanishes when Vue mounts) -->
+    <div id="pre-splash">
+      <div class="splash-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </div>
+      <div class="splash-title">Codex History Sync</div>
+      <div class="splash-subtitle">正在启动...</div>
+      <div class="splash-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
