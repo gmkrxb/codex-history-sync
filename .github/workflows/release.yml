@@ -1,0 +1,176 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, for example v2.0.0
+        required: true
+        default: v2.0.0
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: win
+            arch: x64
+            runner: windows-latest
+            electron_platform: win
+            backend_name: sync_backend.exe
+          - platform: win
+            arch: arm64
+            runner: windows-11-arm
+            electron_platform: win
+            backend_name: sync_backend.exe
+          - platform: mac
+            arch: x64
+            runner: macos-15-intel
+            electron_platform: mac
+            backend_name: sync_backend
+          - platform: mac
+            arch: arm64
+            runner: macos-15
+            electron_platform: mac
+            backend_name: sync_backend
+          - platform: linux
+            arch: x64
+            runner: ubuntu-latest
+            electron_platform: linux
+            backend_name: sync_backend
+          - platform: linux
+            arch: arm64
+            runner: ubuntu-24.04-arm
+            electron_platform: linux
+            backend_name: sync_backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python build tools
+        run: python -m pip install --upgrade pip pyinstaller
+
+      - name: Install app dependencies
+        run: npm ci
+
+      - name: Build renderer
+        run: npm run build
+
+      - name: Prepare macOS icon
+        if: matrix.platform == 'mac'
+        shell: bash
+        run: |
+          mkdir -p assets/codex-sync-modern.iconset
+          sips -z 16 16 assets/codex-sync-modern.png --out assets/codex-sync-modern.iconset/icon_16x16.png
+          sips -z 32 32 assets/codex-sync-modern.png --out assets/codex-sync-modern.iconset/icon_16x16@2x.png
+          sips -z 32 32 assets/codex-sync-modern.png --out assets/codex-sync-modern.iconset/icon_32x32.png
+          sips -z 64 64 assets/codex-sync-modern.png --out assets/codex-sync-modern.iconset/icon_32x32@2x.png
+          sips -z 128 128 assets/codex-sync-modern.png --out assets/codex-sync-modern.iconset/icon_128x128.png
+          sips -z 256 256 assets/codex-sync-modern.png --out assets/codex-sync-modern.iconset/icon_128x128@2x.png
+          sips -z 256 256 assets/codex-sync-modern.png --out assets/codex-sync-modern.iconset/icon_256x256.png
+          sips -z 512 512 assets/codex-sync-modern.png --out assets/codex-sync-modern.iconset/icon_256x256@2x.png
+          sips -z 512 512 assets/codex-sync-modern.png --out assets/codex-sync-modern.iconset/icon_512x512.png
+          cp assets/codex-sync-modern.png assets/codex-sync-modern.iconset/icon_512x512@2x.png
+          iconutil -c icns assets/codex-sync-modern.iconset -o assets/codex-sync-modern.icns
+
+      - name: Build backend
+        shell: bash
+        run: |
+          python -m PyInstaller \
+            --onefile \
+            --clean \
+            --noconfirm \
+            --name sync_backend \
+            --distpath backend \
+            --workpath backend/build \
+            --specpath backend \
+            backend/sync_backend.py
+          test -f "backend/${{ matrix.backend_name }}"
+
+      - name: Build Electron package
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --${{ matrix.electron_platform }} --${{ matrix.arch }} --publish never
+
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          find release -maxdepth 1 -type f \( \
+            -name "*.exe" -o \
+            -name "*.dmg" -o \
+            -name "*.AppImage" -o \
+            -name "*.deb" \
+          \) -print -exec cp {} artifacts/ \;
+          cp README.md artifacts/README.md
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-history-sync-${{ matrix.platform }}-${{ matrix.arch }}
+          path: artifacts/*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Prepare release notes
+        run: |
+          cp README.md release-assets/README.md
+          cat > RELEASE_NOTES.md <<'EOF'
+          # Codex History Sync
+
+          See `README.md` in this release for full bilingual documentation.
+
+          ## Downloads
+
+          - Windows x64: installer and portable executable
+          - Windows arm64: installer and portable executable
+          - macOS x64: DMG
+          - macOS arm64: DMG
+          - Linux x64: AppImage and deb
+          - Linux arm64: AppImage and deb
+          EOF
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: Codex History Sync ${{ github.event.inputs.tag || github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          files: release-assets/*
+          make_latest: true
