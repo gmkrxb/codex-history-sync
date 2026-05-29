@@ -1,0 +1,109 @@
+{
+  "name": "codex-history-sync-tool",
+  "version": "2.0.0",
+  "description": "Codex Desktop 本地历史同步工具 - Vue 3 + Electron",
+  "author": "gmkrxb",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gmkrxb/codex-history-sync.git"
+  },
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "vite build && electron-builder",
+    "electron:build:win": "vite build && electron-builder --win",
+    "electron:build:mac": "vite build && electron-builder --mac",
+    "electron:build:linux": "vite build && electron-builder --linux"
+  },
+  "dependencies": {
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.3",
+    "concurrently": "^9.1.2",
+    "electron": "^35.1.5",
+    "electron-builder": "^26.0.12",
+    "vite": "^6.3.5",
+    "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "com.codex.history-sync",
+    "productName": "Codex History Sync",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "assets/**/*"
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/codex-sync-modern.ico"
+    },
+    "portable": {
+      "artifactName": "Codex-History-Sync-Portable-${version}-win-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "assets/codex-sync-modern.icns",
+      "artifactName": "Codex-History-Sync-${version}-mac-${arch}.${ext}",
+      "category": "public.app-category.utilities"
+    },
+    "dmg": {
+      "artifactName": "Codex-History-Sync-${version}-mac-${arch}.${ext}",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/codex-sync-modern.png",
+      "artifactName": "Codex-History-Sync-${version}-linux-${arch}.${ext}",
+      "category": "Utility"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Codex History Sync",
+      "artifactName": "Codex-History-Sync-Setup-${version}-win-${arch}.${ext}"
+    },
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": [
+          "sync_backend",
+          "sync_backend.exe"
+        ]
+      },
+      {
+        "from": "assets",
+        "to": "assets"
+      }
+    ]
+  }
+}

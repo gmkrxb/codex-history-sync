@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+release/
+backend/build/
+backend/sync_backend.exe
+backend/sync_backend
+
+# Python cache and local binaries
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.spec
+
+# Runtime logs and local scratch files
+*.log
+*.err
+*.tmp
+*.bak
+*.lnk
+.playwright-mcp/
+*.blockmap
+
+# OS/editor noise
+Thumbs.db
+.DS_Store
+.vscode/
+.idea/
+
+# Local Codex data and generated backups should never be committed.
+.codex/
+history_sync_backups/
