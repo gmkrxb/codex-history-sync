@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag, for example v2.0.0
+        description: Release tag, for example v3.0.0
         required: true
-        default: v2.0.0
+        default: v3.0.0
   push:
     tags:
       - "v*"
@@ -126,6 +126,7 @@ jobs:
             -name "*.deb" \
           \) -print -exec cp {} artifacts/ \;
           cp README.md artifacts/README.md
+          cp README_EN.md artifacts/README_EN.md
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -151,10 +152,27 @@ jobs:
       - name: Prepare release notes
         run: |
           cp README.md release-assets/README.md
+          cp README_EN.md release-assets/README_EN.md
           cat > RELEASE_NOTES.md <<'EOF'
-          # Codex History Sync
+          # Codex History Sync ${{ github.event.inputs.tag || github.ref_name }}
 
-          See `README.md` in this release for full bilingual documentation.
+          This release focuses on reliability after provider/account switches and after unstable sync builds.
+
+          ## Highlights
+
+          - Fixed partial sync issues by scanning every JSONL `session_meta` entry, not only the file prefix.
+          - Added full preflight checks for Codex processes, SQLite schema/integrity, database locks, backup directory write access, and JSONL file writability.
+          - Added post-sync verification and rollback using SQLite plus JSONL metadata backups.
+          - Added database diagnosis and conservative repair for missing `threads` rows, empty titles/previews, and provider mismatches.
+          - Added administrator/elevated retry for sync, restore, and repair on Windows, macOS, and Linux.
+          - Added GitHub project link and optional Release update checking inside the app.
+          - Cleaned up Chinese/English documentation and UI text.
+
+          ## Version line
+
+          - v1.0.0: backend-only Python CLI centered on `backend/sync_backend.py`.
+          - v2.0.0: Vue 3 + Electron GUI and cross-platform packages.
+          - v3.0.0: bug fixes, robust sync, database repair, elevated retry, and update checks.
 
           ## Downloads
 
@@ -164,6 +182,8 @@ jobs:
           - macOS arm64: DMG
           - Linux x64: AppImage and deb
           - Linux arm64: AppImage and deb
+
+          See `README.md` and `README_EN.md` in this release for full bilingual documentation.
           EOF
 
       - name: Publish release

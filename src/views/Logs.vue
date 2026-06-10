@@ -3,7 +3,7 @@
     <div class="view-header">
       <div>
         <h2 class="view-title">操作日志</h2>
-        <p class="view-desc">记录刷新、同步、备份和恢复的执行结果。</p>
+        <p class="view-desc">记录刷新、同步、备份、恢复、修复和更新检测的执行结果。</p>
       </div>
       <div class="header-actions">
         <button class="btn btn-secondary" @click="clearLogs">
@@ -33,7 +33,6 @@ const props = defineProps({
   status: Object,
   logs: Array
 })
-const emit = defineEmits(['refresh', 'log'])
 
 function clearLogs() {
   props.logs.length = 0

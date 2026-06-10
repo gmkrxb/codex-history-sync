@@ -322,6 +322,9 @@ body {
 .sidebar-status {
   padding: 0 16px;
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .status-card {
@@ -395,6 +398,91 @@ body {
   padding: 16px 24px;
   font-size: 11px;
   color: var(--text-muted);
+}
+
+.github-link {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.github-link:hover {
+  color: var(--accent);
+}
+
+.update-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-glass);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition);
+}
+
+.update-card:hover,
+.update-card.has-update {
+  border-color: var(--border-accent);
+  background: var(--accent-soft);
+}
+
+.update-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.update-main strong {
+  font-size: 12px;
+}
+
+.update-main small {
+  color: var(--text-muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.update-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  background: var(--text-muted);
+}
+
+.update-dot.success {
+  background: var(--success);
+  box-shadow: 0 0 10px var(--success-glow);
+}
+
+.update-dot.warning {
+  background: var(--warning);
+  box-shadow: 0 0 12px var(--warning-glow);
+  animation: pulse-dot 1.6s ease-in-out infinite;
+}
+
+.update-dot.loading {
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 0.75; }
+  50% { transform: scale(1.45); opacity: 1; }
 }
 
 /* ===== Main Content ===== */
@@ -1369,6 +1457,102 @@ body {
   word-break: break-all;
 }
 
+.action-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  border-radius: var(--radius-lg);
+  background: var(--warning-soft);
+  border: 1px solid rgba(237, 137, 54, 0.22);
+}
+
+.card .action-alert {
+  margin: 14px 0 0;
+}
+
+.action-alert h4,
+.action-alert h3 {
+  margin-bottom: 5px;
+  color: var(--text);
+}
+
+.action-alert p {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.repair-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.diagnosis-grid,
+.update-detail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.diagnosis-grid > div,
+.update-detail > div {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+}
+
+.diagnosis-grid strong,
+.update-detail strong {
+  display: block;
+  color: var(--text);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repair-result {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(72, 187, 120, 0.18);
+  background: var(--success-soft);
+}
+
+.repair-result h4 {
+  color: var(--success);
+  margin-bottom: 6px;
+}
+
+.repair-result p {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.release-notes {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 260px;
+  overflow: auto;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1600,6 +1784,10 @@ body {
   .metric-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .diagnosis-grid,
+  .update-detail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 800px) {
@@ -1612,6 +1800,15 @@ body {
   .sync-status-grid {
     flex-direction: column;
     gap: 20px;
+  }
+  .repair-card-head,
+  .action-alert {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .diagnosis-grid,
+  .update-detail {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -3,15 +3,27 @@
     <div class="view-header">
       <div>
         <h2 class="view-title">历史同步</h2>
-        <p class="view-desc">把旧 provider 下的本地历史归并到当前正在使用的 provider。</p>
+        <p class="view-desc">把旧 provider 下的本地历史合并到当前正在使用的 provider。</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-primary" @click="doSync" :disabled="syncing || checkingProcesses || closingProcesses">
-          <svg v-if="!syncing && !checkingProcesses && !closingProcesses" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-          <span v-if="syncing || checkingProcesses || closingProcesses" class="spinner"></span>
+        <button class="btn btn-primary" @click="doSync" :disabled="busy">
+          <svg v-if="!busy" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          <span v-if="busy" class="spinner"></span>
           {{ syncButtonText }}
         </button>
       </div>
+    </div>
+
+    <div class="card action-alert" v-if="lastSyncError">
+      <div>
+        <h3 class="card-title">同步失败，可尝试提权重试</h3>
+        <p class="card-desc">{{ lastSyncError }}</p>
+        <p class="card-desc">如果失败原因是数据库、备份目录或 JSONL 文件没有写入权限，点击后系统会弹出管理员授权，授权成功后继续同步。</p>
+      </div>
+      <button class="btn btn-warning" @click="retrySyncElevated" :disabled="busy">
+        <span v-if="elevatedSyncing" class="spinner"></span>
+        获取管理员权限后重试同步
+      </button>
     </div>
 
     <div class="card" v-if="status">
@@ -42,15 +54,15 @@
         <div class="explain-item">
           <div class="explain-num">1</div>
           <div class="explain-text">
-            <strong>自动检测环境</strong>
-            <p>自动识别 Windows/macOS 下的 <code>~/.codex</code>、配置文件和 SQLite 数据库。</p>
+            <strong>同步前完整预检</strong>
+            <p>检查 <code>~/.codex</code>、配置文件、SQLite schema、备份目录、数据库锁和 JSONL 文件写入权限。</p>
           </div>
         </div>
         <div class="explain-item">
           <div class="explain-num">2</div>
           <div class="explain-text">
-            <strong>先确认 Codex 已关闭</strong>
-            <p>同步前会检测 Codex 进程，只有确认关闭后才允许写入数据库和会话文件。</p>
+            <strong>确认 Codex 已关闭</strong>
+            <p>同步前会检测 Codex 进程，避免 SQLite/WAL 被占用或历史索引被 Codex 重新写回。</p>
           </div>
         </div>
         <div class="explain-item">
@@ -63,8 +75,8 @@
         <div class="explain-item">
           <div class="explain-num">4</div>
           <div class="explain-text">
-            <strong>写入后再次校验</strong>
-            <p>如果校验发现仍有旧 provider，后端会报错，不再给出假成功。</p>
+            <strong>失败回滚，写后校验</strong>
+            <p>写入前自动备份 SQLite 和 JSONL；写后如果仍有不一致，会报错并尝试回滚。</p>
           </div>
         </div>
       </div>
@@ -78,7 +90,7 @@
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
             <h3>请先关闭 Codex</h3>
-            <p>检测到 Codex 或它的辅助进程仍在运行。为了避免 SQLite/WAL 被占用或索引被重新写回，请关闭后再同步。</p>
+            <p>检测到 Codex 或辅助进程仍在运行。为了避免数据库被占用或历史文件被重新写入，请关闭后再同步。</p>
 
             <div class="process-list" v-if="processState?.processes?.length">
               <div class="process-item" v-for="item in processState.processes" :key="`${item.pid}-${item.name}`">
@@ -154,7 +166,7 @@
 
 <script setup>
 import { computed, inject, ref } from 'vue'
-import { checkCodexProcesses, closeCodexProcesses, syncProviders } from '../api.js'
+import { closeCodexProcesses, preflightSync, syncProviders, syncProvidersElevated } from '../api.js'
 
 const props = defineProps({
   status: Object,
@@ -167,17 +179,22 @@ const showToast = inject('showToast')
 const checkingProcesses = ref(false)
 const closingProcesses = ref(false)
 const syncing = ref(false)
+const elevatedSyncing = ref(false)
 const showConfirm = ref(false)
 const showProcessBlocker = ref(false)
 const showResult = ref(false)
 const syncResult = ref(null)
 const processState = ref(null)
+const lastSyncError = ref('')
 
 const pendingTotal = computed(() => {
   return (props.status?.movable_threads || 0) + (props.status?.mismatched_session_meta || 0)
 })
 
+const busy = computed(() => syncing.value || elevatedSyncing.value || checkingProcesses.value || closingProcesses.value)
+
 const syncButtonText = computed(() => {
+  if (elevatedSyncing.value) return '提权同步中...'
   if (syncing.value) return '同步中...'
   if (closingProcesses.value) return '关闭中...'
   if (checkingProcesses.value) return '检测中...'
@@ -187,18 +204,28 @@ const syncButtonText = computed(() => {
 async function verifyCodexClosed() {
   checkingProcesses.value = true
   try {
-    const result = await checkCodexProcesses()
-    processState.value = result
-    if (result.running) {
-      showProcessBlocker.value = true
-      addLog(`检测到 Codex 仍在运行: ${result.processes.map(item => `${item.name}(${item.pid})`).join(', ')}`)
+    const result = await preflightSync()
+    processState.value = result.processes
+    if (result.session_plan) {
+      addLog(`同步预检：检查 JSONL ${result.session_plan.checked_files} 个，计划更新 ${result.session_plan.updated_session_files} 个文件 / ${result.session_plan.updated_session_meta} 条元数据。`)
+    }
+    if (!result.can_sync) {
+      const issueText = result.issues?.join('；') || '未知预检错误'
+      addLog(`同步预检失败: ${issueText}`)
+      if (result.processes?.running) {
+        showProcessBlocker.value = true
+      } else {
+        lastSyncError.value = issueText
+        showToast(`同步预检失败: ${issueText}`, 'error')
+      }
       return false
     }
-    addLog('Codex 进程检测通过，可以同步。')
+    addLog('同步预检通过，可以安全执行同步。')
     return true
   } catch (e) {
-    addLog(`进程检测失败: ${e.message}`)
-    showToast(`进程检测失败: ${e.message}`, 'error')
+    lastSyncError.value = e.message
+    addLog(`同步预检失败: ${e.message}`)
+    showToast(`同步预检失败: ${e.message}`, 'error')
     return false
   } finally {
     checkingProcesses.value = false
@@ -248,23 +275,44 @@ async function recheckProcesses() {
   }
 }
 
-async function confirmSync() {
-  showConfirm.value = false
-  syncing.value = true
+function handleSyncSuccess(result, elevated = false) {
+  syncResult.value = result
+  showResult.value = true
+  lastSyncError.value = ''
+  addLog(`${elevated ? '管理员权限同步' : '同步'}完成。DB ${result.updated_rows} 条，JSONL ${result.updated_session_meta} 条。`)
+  addLog(`SQLite 备份: ${result.backup_path}`)
+  addLog(`JSONL 元数据备份: ${result.session_meta_backup_path}`)
+  showToast('同步完成', 'success')
+  emit('refresh')
+}
+
+async function runSync(elevated) {
+  if (elevated) {
+    elevatedSyncing.value = true
+  } else {
+    syncing.value = true
+  }
   try {
-    const result = await syncProviders()
-    syncResult.value = result
-    showResult.value = true
-    addLog(`同步完成。DB ${result.updated_rows} 条，JSONL ${result.updated_session_meta} 条。`)
-    addLog(`SQLite 备份: ${result.backup_path}`)
-    addLog(`JSONL 元数据备份: ${result.session_meta_backup_path}`)
-    showToast('同步完成', 'success')
-    emit('refresh')
+    const result = elevated ? await syncProvidersElevated() : await syncProviders()
+    handleSyncSuccess(result, elevated)
   } catch (e) {
-    addLog(`同步失败: ${e.message}`)
-    showToast(`同步失败: ${e.message}`, 'error')
+    lastSyncError.value = e.message
+    addLog(`${elevated ? '管理员权限同步' : '同步'}失败: ${e.message}`)
+    showToast(`${elevated ? '管理员权限同步' : '同步'}失败: ${e.message}`, 'error')
   } finally {
     syncing.value = false
+    elevatedSyncing.value = false
+  }
+}
+
+async function confirmSync() {
+  showConfirm.value = false
+  await runSync(false)
+}
+
+async function retrySyncElevated() {
+  if (await verifyCodexClosed()) {
+    await runSync(true)
   }
 }
 </script>

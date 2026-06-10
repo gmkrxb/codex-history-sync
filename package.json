@@ -1,7 +1,7 @@
 {
   "name": "codex-history-sync-tool",
-  "version": "2.0.0",
-  "description": "Codex Desktop 本地历史同步工具 - Vue 3 + Electron",
+  "version": "3.0.0",
+  "description": "Codex Desktop local history sync, repair, backup, and recovery tool - Vue 3 + Electron",
   "author": {
     "name": "gmkrxb",
     "email": "gmkrxb@users.noreply.github.com"

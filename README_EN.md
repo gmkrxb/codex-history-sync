@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Restore local Codex Desktop history after provider, API key, or account changes.</strong>
+  <strong>Repair invisible Codex Desktop history, partial syncs, broken local indexes, and backup recovery issues.</strong>
 </p>
 
 <p align="center">
@@ -22,7 +22,6 @@
   <a href="https://github.com/gmkrxb/codex-history-sync/stargazers">
     <img src="https://img.shields.io/github/stars/gmkrxb/codex-history-sync?style=flat&label=stars" alt="Stars" />
   </a>
-  <img src="https://img.shields.io/github/commit-activity/m/gmkrxb/codex-history-sync?label=commit%20activity" alt="Commit activity" />
   <a href="LICENSE">
     <img src="https://img.shields.io/github/license/gmkrxb/codex-history-sync?label=license" alt="License" />
   </a>
@@ -31,66 +30,79 @@
 <p align="center">
   <a href="README.md">中文</a> ·
   <a href="#downloads">Downloads</a> ·
-  <a href="#screenshots">Screenshots</a> ·
-  <a href="#quick-start">Quick Start</a>
+  <a href="#whats-new-in-300">What's New in 3.0</a> ·
+  <a href="#cli">CLI</a> ·
+  <a href="#release-300">Release 3.0.0</a>
 </p>
 
 ![Overview](docs/screenshots/overview.png)
 
 ## Overview
 
-Codex History Sync is a small desktop utility for repairing Codex Desktop's local history index when conversations still exist under `~/.codex`, but disappear from the UI after switching API keys, accounts, auth modes, or `model_provider` values.
+Codex History Sync is a desktop utility for repairing Codex Desktop local history visibility. A common failure mode is: after switching accounts, API keys, auth modes, or `model_provider`, conversations still exist under `~/.codex`, but Codex Desktop shows no history or only part of it.
 
-It inspects the local Codex configuration and SQLite database, shows the provider distribution, creates backups, and safely rewrites old provider references to the currently active provider. It also updates JSONL `session_meta` entries so the database index and archived sessions stay consistent.
+Version 3.0.0 builds on the 2.0 GUI release and focuses on reliability: partial JSONL syncs, false success states, incomplete restore behavior, database index gaps, environment preflight checks, elevated retry, and GitHub Release update checks.
 
-## Features
+Repository: [gmkrxb/codex-history-sync](https://github.com/gmkrxb/codex-history-sync)
 
-- Cross-platform backend for Windows and macOS path detection.
-- Automatic discovery of `~/.codex`, `config.toml`, `auth.json`, and `state_5.sqlite`.
-- Provider distribution overview for local `threads` records.
-- Sync SQLite `threads.model_provider` to the current provider.
-- Sync JSONL `session_meta.payload.model_provider` for archived sessions.
-- Pre-sync and pre-restore backups for SQLite and JSONL metadata.
-- Backup detail modal with provider counts and thread previews.
-- Backup deletion with a second confirmation.
-- Codex process detection before writing, with one-click close and manual fallback commands.
-- UTF-8 safe backend output on Windows terminals.
+## What's New in 3.0.0
+
+- Full preflight before sync: Codex process guard, SQLite schema validation, `PRAGMA quick_check`, backup directory write test, database lock test, and JSONL rewrite permission checks.
+- Fixed partial sync: scans every `session_meta` entry in JSONL files instead of only looking near the top of each file.
+- Post-write verification and rollback: after sync, the backend verifies both SQLite and JSONL state; if verification fails, it attempts to restore the safety backups.
+- Database diagnosis: detects SQLite integrity status, missing `threads` rows, empty titles/previews, missing JSONL files, provider mismatches, and malformed JSONL lines.
+- Database repair: rebuilds missing `threads` rows from `sessions/` and `archived_sessions/`, fills empty titles/previews, and normalizes provider metadata. The repair strategy is conservative: add/fill/fix, never delete.
+- Elevated retry: when sync, restore, or repair fails because of permissions, the UI can retry with administrator privileges. Windows uses UAC, macOS uses administrator authorization, and Linux uses `pkexec` when available.
+- Update check: the app checks GitHub Releases when network is available, shows a small non-blocking indicator, displays release notes, and lets users open the Release page.
+- UI/documentation cleanup: restored readable Chinese text, added GitHub links, repair result summaries, and clearer operation logs.
 
 ## When To Use
 
 Use this tool when:
 
 - Codex Desktop history disappears after switching account, API key, auth mode, or provider.
-- The local `~/.codex` directory still exists.
-- `state_5.sqlite` still exists and is readable.
-- You want to inspect provider distribution before changing anything.
+- Sync restores only part of the history.
+- SQLite and JSONL provider metadata are inconsistent.
+- `~/.codex/state_5.sqlite` still exists but local history index rows are missing or have empty titles/previews.
+- You used an unstable version and want to diagnose or repair local history metadata.
+- You want to preview sync/repair impact before writing.
 
 Do not use it for:
 
 - Merging histories across different machines.
 - Syncing conversations between cloud accounts.
-- Recovering a deleted or corrupted SQLite database.
+- Recovering a fully deleted SQLite database when there are no backups and no JSONL history files.
+- Force-writing to a SQLite database that fails `PRAGMA quick_check`; restore a known-good backup first.
 
 ## Downloads
 
+Release page: [https://github.com/gmkrxb/codex-history-sync/releases](https://github.com/gmkrxb/codex-history-sync/releases)
+
 | Platform | Architecture | Package | Download |
 | --- | --- | --- | --- |
-| Windows | x64 | Installer | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-Setup-2.0.0-win-x64.exe) |
-| Windows | x64 | Portable EXE | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-Portable-2.0.0-win-x64.exe) |
-| Windows | arm64 | Installer | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-Setup-2.0.0-win-arm64.exe) |
-| Windows | arm64 | Portable EXE | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-Portable-2.0.0-win-arm64.exe) |
-| macOS | Intel x64 | DMG | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-mac-x64.dmg) |
-| macOS | Apple Silicon arm64 | DMG | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-mac-arm64.dmg) |
-| Linux | x64 | AppImage | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-x86_64.AppImage) |
-| Linux | x64 | deb | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-amd64.deb) |
-| Linux | arm64 | AppImage | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-arm64.AppImage) |
-| Linux | arm64 | deb | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-2.0.0-linux-arm64.deb) |
+| Windows | x64 | Installer | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-Setup-3.0.0-win-x64.exe) |
+| Windows | x64 | Portable EXE | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-Portable-3.0.0-win-x64.exe) |
+| Windows | arm64 | Installer | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-Setup-3.0.0-win-arm64.exe) |
+| Windows | arm64 | Portable EXE | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-Portable-3.0.0-win-arm64.exe) |
+| macOS | Intel x64 | DMG | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-3.0.0-mac-x64.dmg) |
+| macOS | Apple Silicon arm64 | DMG | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-3.0.0-mac-arm64.dmg) |
+| Linux | x64 | AppImage | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-3.0.0-linux-x86_64.AppImage) |
+| Linux | x64 | deb | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-3.0.0-linux-amd64.deb) |
+| Linux | arm64 | AppImage | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-3.0.0-linux-arm64.AppImage) |
+| Linux | arm64 | deb | [Download](https://github.com/gmkrxb/codex-history-sync/releases/latest/download/Codex-History-Sync-3.0.0-linux-arm64.deb) |
 
-Release assets are built by GitHub Actions for each operating system and architecture.
+Release assets are built and uploaded by GitHub Actions.
+
+## Recommended Workflow
+
+1. Close Codex Desktop.
+2. Open Codex History Sync and review the Overview page.
+3. If only provider metadata differs, use the Sync page.
+4. If history rows are missing, titles are empty, or previous syncs behaved oddly, run Database Diagnosis first, then Database Repair.
+5. If sync, repair, or restore fails with a permission-related error, use the elevated retry button.
+6. The app creates safety backups before every write, but writing while Codex is running is still discouraged.
 
 ## Quick Start
-
-Clone the repository, install dependencies, and run the development app:
 
 ```powershell
 git clone https://github.com/gmkrxb/codex-history-sync.git
@@ -99,50 +111,19 @@ npm install
 npm run electron:dev
 ```
 
-Build only the frontend assets:
+Build only the renderer:
 
 ```powershell
 npm run build
 ```
 
-Run commands from the repository root.
-
-## Command Reference
-
-### npm Scripts
-
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start only the Vite renderer dev server, usually at `http://localhost:5173/`. |
-| `npm run build` | Build the Vue renderer into `dist/`. |
-| `npm run electron:dev` | Start Vite and Electron together for local development. |
-| `npm run electron:build` | Build the renderer and package for the current operating system. |
-| `npm run electron:build:win` | Build Windows installer and portable executable. |
-| `npm run electron:build:mac` | Build macOS DMG. Run this on macOS. |
-| `npm run electron:build:linux` | Build Linux AppImage/deb. Run this on Linux. |
-
-### Backend Executable
-
-Packaged Electron builds do not depend on the user's local Python runtime. The Python backend is bundled as an executable under `backend/`.
-
-Windows:
+Build the current platform package:
 
 ```powershell
-python -m PyInstaller --onefile --clean --noconfirm --name sync_backend --distpath backend --workpath backend\build --specpath backend backend\sync_backend.py
+npm run electron:build
 ```
 
-macOS / Linux:
-
-```bash
-python3 -m PyInstaller --onefile --clean --noconfirm --name sync_backend --distpath backend --workpath backend/build --specpath backend backend/sync_backend.py
-```
-
-Generated backend files:
-
-- Windows: `backend/sync_backend.exe`
-- macOS / Linux: `backend/sync_backend`
-
-## Backend CLI Options
+## CLI
 
 Backend entry point on Windows:
 
@@ -167,76 +148,30 @@ python3 backend/sync_backend.py [global options] <command> [command options]
 
 | Command | Options | Description |
 | --- | --- | --- |
-| `status` | None | Show current provider, model, thread counts, provider distribution, and backup list. |
+| `status` | None | Show current provider, model, thread counts, provider distribution, JSONL metadata status, and backup list. |
 | `detect` | None | Detect platform, Codex home, config path, auth path, and SQLite database path. |
+| `diagnose` | None | Diagnose database integrity, missing index rows, empty titles/previews, JSONL metadata, and provider mismatches. |
+| `preflight` | None | Run pre-sync safety checks for Codex processes, DB/schema, backup directory, and JSONL writability. |
 | `processes` | None | Check whether Codex or helper processes are still running. |
-| `close-processes` | None | Try to close detected Codex-related processes; returns manual fallback commands when needed. |
-| `sync` | None | Sync SQLite and JSONL providers to the current provider. It checks Codex processes and creates backups before writing. |
-| `backup` | None | Create a manual SQLite backup. |
-| `restore` | `--backup <path>` optional | Restore from a backup. Uses the newest backup when `--backup` is omitted, and creates a safety backup first. |
+| `close-processes` | None | Try to close detected Codex-related processes and return manual fallback commands when needed. |
+| `sync` | None | Sync SQLite and JSONL providers to the current provider. Creates backups before writing and verifies after writing. |
+| `repair` | None | Rebuild missing index rows from JSONL, fill empty titles/previews, and normalize provider metadata. Creates backups first. |
+| `backup` | None | Create a manual SQLite backup plus JSONL metadata sidecar. |
+| `restore` | `--backup <path>` optional | Restore from a backup. Uses the newest backup when omitted and creates a safety backup first. |
 | `backup-detail` | `--backup <path>` required | Show backup details, including thread count, provider distribution, and thread preview. |
 | `delete-backup` | `--backup <path>` required | Delete a SQLite backup and its JSONL session metadata sidecar. |
 
 ### Examples
 
-Show status:
-
 ```powershell
 py -3 backend\sync_backend.py --json status
-```
-
-Detect environment:
-
-```powershell
-py -3 backend\sync_backend.py --json detect
-```
-
-Check Codex processes:
-
-```powershell
-py -3 backend\sync_backend.py --json processes
-```
-
-Try to close Codex-related processes:
-
-```powershell
-py -3 backend\sync_backend.py --json close-processes
-```
-
-Run sync:
-
-```powershell
+py -3 backend\sync_backend.py --json diagnose
+py -3 backend\sync_backend.py --json preflight
 py -3 backend\sync_backend.py --json sync
-```
-
-Create a manual backup:
-
-```powershell
+py -3 backend\sync_backend.py --json repair
 py -3 backend\sync_backend.py --json backup
-```
-
-Restore the newest backup:
-
-```powershell
 py -3 backend\sync_backend.py --json restore
-```
-
-Restore a specific backup:
-
-```powershell
-py -3 backend\sync_backend.py --json restore --backup "C:\Users\you\.codex\history_sync_backups\state_5.sqlite.pre-sync.20260529-221500.bak"
-```
-
-Inspect backup details:
-
-```powershell
-py -3 backend\sync_backend.py --json backup-detail --backup "C:\Users\you\.codex\history_sync_backups\state_5.sqlite.pre-sync.20260529-221500.bak"
-```
-
-Delete a backup:
-
-```powershell
-py -3 backend\sync_backend.py --json delete-backup --backup "C:\Users\you\.codex\history_sync_backups\state_5.sqlite.pre-sync.20260529-221500.bak"
+py -3 backend\sync_backend.py --json restore --backup "C:\Users\you\.codex\history_sync_backups\state_5.sqlite.pre-sync.20260610-120000.bak"
 ```
 
 Use a custom Codex home:
@@ -245,9 +180,51 @@ Use a custom Codex home:
 py -3 backend\sync_backend.py --codex-home "D:\CodexData\.codex" --json status
 ```
 
+## Version History
+
+### v3.0.0
+
+- Fixed sync failures, partial syncs, and JSONL metadata mismatch issues.
+- Added preflight checks, post-write verification, and rollback.
+- Added database diagnosis and repair.
+- Added elevated retry for sync, restore, and repair.
+- Added GitHub link and Release update check.
+- Fixed frontend API wiring, JSONL sidecar restore handling, Windows Python selection, and Chinese documentation/UI text.
+
+### v2.0.0
+
+- Upgraded from a CLI helper to a Vue 3 + Electron desktop GUI.
+- Added Overview, Sync, Backup/Restore, and Logs pages.
+- Added cross-platform packages for Windows, macOS, and Linux.
+
+### v1.0.0
+
+- Initial backend-only version centered on `backend/sync_backend.py`.
+- Used a Python CLI to inspect `~/.codex/state_5.sqlite` and sync provider metadata.
+- Best suited for manual command-line repair.
+
+## Release 3.0.0
+
+After confirming `package.json`, `package-lock.json`, README files, and code changes are ready:
+
+```powershell
+git status
+git add backend/sync_backend.py electron/main.js electron/preload.js src package.json package-lock.json README.md README_EN.md .github/workflows/release.yml
+git commit -m "Release v3.0.0"
+git tag v3.0.0
+git push origin main
+git push origin v3.0.0
+```
+
+Pushing the tag starts GitHub Actions and publishes the Release automatically. You can also trigger it manually:
+
+```powershell
+gh workflow run release.yml -f tag=v3.0.0
+```
+
 ## Safety Notes
 
-This tool modifies local Codex data. It creates backups automatically, but you should still close Codex Desktop before sync or restore operations. The app checks for running Codex processes before writing and blocks sync until they are closed.
+This tool modifies local Codex data. Sync, repair, and restore operations create backups first, but you should still close Codex Desktop before writing. If SQLite integrity checks fail, do not force-write; restore a known-good backup first.
 
 ## Screenshots
 
@@ -276,11 +253,10 @@ This tool modifies local Codex data. It creates backups automatically, but you s
 ```text
 .
 ├── assets/                 # Application icons
-├── backend/                # Python backend for SQLite and JSONL sync
+├── backend/                # Python backend for SQLite/JSONL sync, diagnosis, and repair
 ├── electron/               # Electron main/preload process
 ├── src/                    # Vue 3 renderer application
-├── docs/
-│   └── screenshots/        # README screenshots
+├── docs/screenshots/       # README screenshots
 ├── package.json            # App scripts and electron-builder config
 ├── vite.config.js
 ├── README.md

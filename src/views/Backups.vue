@@ -6,8 +6,9 @@
         <p class="view-desc">管理 SQLite 备份和 JSONL 元数据备份，可查看详情、恢复或删除。</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-secondary" @click="doBackup">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <button class="btn btn-secondary" @click="doBackup" :disabled="backingUp">
+          <span v-if="backingUp" class="spinner"></span>
+          <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           手动备份
         </button>
         <button class="btn btn-secondary" @click="openDir">
@@ -15,6 +16,18 @@
           打开目录
         </button>
       </div>
+    </div>
+
+    <div class="card action-alert" v-if="restoreError && restoreTarget">
+      <div>
+        <h3 class="card-title">恢复失败，可尝试提权重试</h3>
+        <p class="card-desc">{{ restoreError }}</p>
+        <p class="card-desc">如果失败原因是数据库或历史文件权限不足，可以获取管理员权限后继续恢复这个备份。</p>
+      </div>
+      <button class="btn btn-warning" @click="retryRestoreElevated" :disabled="restoreBusy">
+        <span v-if="elevatedRestoring" class="spinner"></span>
+        获取管理员权限后重试恢复
+      </button>
     </div>
 
     <div class="card" v-if="status">
@@ -44,7 +57,7 @@
       <div class="backup-list" v-if="status?.backups?.length">
         <div
           v-for="(backup, index) in status.backups"
-          :key="backup.path"
+          :key="`${backup.path}-${index}`"
           class="backup-item"
           :class="{ selected: selectedIndex === index }"
           @click="selectedIndex = index"
@@ -61,7 +74,7 @@
           </div>
           <div class="backup-item-actions">
             <button class="btn btn-sm btn-secondary" @click.stop="openDetail(backup)">详情</button>
-            <button class="btn btn-sm btn-warning" @click.stop="doRestore(backup)">恢复</button>
+            <button class="btn btn-sm btn-warning" @click.stop="doRestore(backup)" :disabled="restoreBusy">恢复</button>
           </div>
         </div>
       </div>
@@ -146,7 +159,10 @@
             <p class="modal-note">恢复前会再自动生成一份安全备份。请先关闭 Codex。</p>
             <div class="modal-actions">
               <button class="btn btn-secondary" @click="showConfirm = false">取消</button>
-              <button class="btn btn-warning" @click="confirmRestore">确认恢复</button>
+              <button class="btn btn-warning" @click="confirmRestore" :disabled="restoreBusy">
+                <span v-if="restoring" class="spinner"></span>
+                确认恢复
+              </button>
             </div>
           </div>
         </div>
@@ -176,8 +192,15 @@
 </template>
 
 <script setup>
-import { inject, ref } from 'vue'
-import { createBackup, deleteBackup, getBackupDetail, openBackupsDir, restoreBackup } from '../api.js'
+import { computed, inject, ref } from 'vue'
+import {
+  createBackup,
+  deleteBackup,
+  getBackupDetail,
+  openBackupsDir,
+  restoreBackup,
+  restoreBackupElevated
+} from '../api.js'
 
 defineProps({
   status: Object,
@@ -192,9 +215,15 @@ const showConfirm = ref(false)
 const showDetail = ref(false)
 const showDeleteConfirm = ref(false)
 const detailLoading = ref(false)
+const backingUp = ref(false)
+const restoring = ref(false)
+const elevatedRestoring = ref(false)
 const restoreTarget = ref(null)
+const restoreError = ref('')
 const deleteTarget = ref(null)
 const backupDetail = ref(null)
+
+const restoreBusy = computed(() => restoring.value || elevatedRestoring.value)
 
 function formatBytes(value) {
   if (!value) return '0 B'
@@ -209,14 +238,20 @@ function formatBytes(value) {
 }
 
 async function doBackup() {
+  backingUp.value = true
   try {
     const result = await createBackup()
     addLog(`手动备份完成: ${result.backup_path}`)
+    if (result.session_meta_backup_path) {
+      addLog(`JSONL 元数据备份: ${result.session_meta_backup_path}`)
+    }
     showToast('手动备份完成', 'success')
     emit('refresh')
   } catch (e) {
     addLog(`备份失败: ${e.message}`)
     showToast(`备份失败: ${e.message}`, 'error')
+  } finally {
+    backingUp.value = false
   }
 }
 
@@ -247,21 +282,50 @@ async function openDetail(backup) {
 
 function doRestore(backup) {
   restoreTarget.value = backup
+  restoreError.value = ''
   showConfirm.value = true
+}
+
+function handleRestoreSuccess(result, elevated = false) {
+  restoreError.value = ''
+  addLog(`${elevated ? '管理员权限恢复' : '恢复'}完成。来源备份: ${result.restored_from}`)
+  addLog(`恢复前安全备份: ${result.safety_backup}`)
+  if (result.safety_session_meta_backup) {
+    addLog(`恢复前 JSONL 安全备份: ${result.safety_session_meta_backup}`)
+  }
+  showToast('恢复完成，建议重新打开 Codex', 'success')
+  emit('refresh')
+}
+
+async function runRestore(elevated) {
+  if (!restoreTarget.value) return
+  if (elevated) {
+    elevatedRestoring.value = true
+  } else {
+    restoring.value = true
+  }
+  try {
+    const result = elevated
+      ? await restoreBackupElevated(restoreTarget.value.path)
+      : await restoreBackup(restoreTarget.value.path)
+    handleRestoreSuccess(result, elevated)
+  } catch (e) {
+    restoreError.value = e.message
+    addLog(`${elevated ? '管理员权限恢复' : '恢复'}失败: ${e.message}`)
+    showToast(`${elevated ? '管理员权限恢复' : '恢复'}失败: ${e.message}`, 'error')
+  } finally {
+    restoring.value = false
+    elevatedRestoring.value = false
+  }
 }
 
 async function confirmRestore() {
   showConfirm.value = false
-  try {
-    const result = await restoreBackup(restoreTarget.value.path)
-    addLog(`恢复完成。来源备份: ${result.restored_from}`)
-    addLog(`恢复前安全备份: ${result.safety_backup}`)
-    showToast('恢复完成，建议重新打开 Codex', 'success')
-    emit('refresh')
-  } catch (e) {
-    addLog(`恢复失败: ${e.message}`)
-    showToast(`恢复失败: ${e.message}`, 'error')
-  }
+  await runRestore(false)
+}
+
+async function retryRestoreElevated() {
+  await runRestore(true)
 }
 
 function requestDeleteFromDetail() {
